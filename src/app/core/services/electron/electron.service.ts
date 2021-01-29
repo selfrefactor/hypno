@@ -1,10 +1,12 @@
 import { Injectable } from '@angular/core';
 
-// If you import a module but never use any of the imported values other than as TypeScript types,
-// the resulting javascript file will look as if you never imported the module at all.
 import {dialog, ipcRenderer, webFrame, remote } from 'electron';
 import * as childProcess from 'child_process';
 import * as fs from 'fs';
+import { scanFolder } from "helpers-fn";
+import { any } from 'rambdax';
+
+const IMAGES = ['.jpg','.png', '.jpeg', '.webp']
 
 @Injectable({
   providedIn: 'root'
@@ -22,8 +24,13 @@ export class ElectronService {
   }
 
   async openDirectory(){
-    const selectedDirectory = await this.remote.dialog.showOpenDialogSync({ properties: [ 'openFile', 'openDirectory'], message: 'Open image directory' })
-    console.log(selectedDirectory)
+    const [selectedDirectory] = await this.remote.dialog.showOpenDialogSync({ properties: [ 'openFile', 'openDirectory'], message: 'Open image directory' })
+    const files = await scanFolder({
+      folder: selectedDirectory,
+      maxDepth: 2,
+      filterFn: (filePath: string) =>any(x => filePath.endsWith(x), IMAGES)
+    })
+    return files
   }
 
   constructor() {
@@ -36,7 +43,6 @@ export class ElectronService {
 
       this.childProcess = window.require('child_process');
       this.fs = window.require('fs');
-      console.log(1)
     }
   }
 }
